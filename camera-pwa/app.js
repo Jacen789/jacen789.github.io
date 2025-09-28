@@ -175,10 +175,10 @@ class CameraApp {
         
         if (this.isMirrored) {
             this.video.style.transform = 'scaleX(-1)';
-            this.mirrorBtn.textContent = '非镜像';
+            this.mirrorBtn.textContent = '镜像';
         } else {
             this.video.style.transform = 'scaleX(1)';
-            this.mirrorBtn.textContent = '镜像';
+            this.mirrorBtn.textContent = '非镜像';
         }
     }
     
@@ -228,12 +228,16 @@ class CameraApp {
      * @param {HTMLCanvasElement} canvas - canvas元素
      */
     drawVideoFrame(ctx, canvas) {
+        ctx.save(); // 保存当前变换状态
+        
         if (this.isMirrored) {
             ctx.scale(-1, 1);
             ctx.drawImage(this.video, -canvas.width, 0, canvas.width, canvas.height);
         } else {
             ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height);
         }
+        
+        ctx.restore(); // 恢复变换状态
     }
     
     /**
