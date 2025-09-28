@@ -16,10 +16,12 @@
 ## 🚀 项目结构
 
 ```
-├── index.html              # 主页面（单文件，包含所有CSS和JS）
+├── index.html              # 主页面
 ├── README.md              # 项目说明
 └── camera-pwa/            # 摄像头PWA应用
-    ├── index.html         # 摄像头应用（单文件，包含所有CSS和JS）
+    ├── index.html         # 摄像头应用主页面
+    ├── styles.css         # 样式文件
+    ├── app.js            # 应用逻辑
     ├── manifest.json      # PWA清单文件
     ├── sw.js             # Service Worker
     └── icons/            # PWA图标文件夹
@@ -63,6 +65,18 @@
 
 ## 🔧 开发说明
 
+### 📁 文件分离
+项目采用模块化设计，将代码分离到不同文件：
+- **HTML** - 页面结构和内容
+- **CSS** - 样式和布局
+- **JavaScript** - 应用逻辑和交互
+
+### 🎯 代码组织
+- **styles.css** - 包含所有样式定义，支持响应式设计
+- **app.js** - 包含CameraApp类和所有应用逻辑
+- **index.html** - 简洁的HTML结构，引用外部资源
+
+### 🚀 PWA功能
 每个PWA应用都是独立的，包含完整的PWA功能：
 - Service Worker用于离线缓存
 - Web App Manifest定义应用元数据
