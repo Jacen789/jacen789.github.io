@@ -8,8 +8,6 @@ class CameraApp {
         this.video = document.getElementById('video');
         this.mainBtn = document.getElementById('main-btn');
         this.mirrorBtn = document.getElementById('mirror-btn');
-        this.errorMessage = document.getElementById('error-message');
-        this.statusIndicator = document.getElementById('status-indicator');
         
         // 应用状态
         this.stream = null;
@@ -34,7 +32,11 @@ class CameraApp {
      */
     bindEvents() {
         this.mainBtn.addEventListener('click', () => this.handleMainButtonClick());
-        this.mirrorBtn.addEventListener('click', () => this.toggleMirror());
+        this.mirrorBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleMirror();
+        });
     }
     
     /**
@@ -42,7 +44,7 @@ class CameraApp {
      */
     checkBrowserSupport() {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            this.showError('您的浏览器不支持摄像头功能');
+            console.error('浏览器不支持摄像头功能');
         }
     }
     
@@ -63,7 +65,6 @@ class CameraApp {
      */
     async startCamera() {
         try {
-            this.hideError();
             this.updateMainButton('启动中...', true);
             
             // 获取摄像头权限
@@ -83,7 +84,6 @@ class CameraApp {
                 this.isRunning = true;
                 this.updateMainButton('拍照', false);
                 this.mirrorBtn.disabled = false;
-                this.showStatus('摄像头已启动');
             };
         } catch (error) {
             this.handleError(error);
@@ -109,14 +109,7 @@ class CameraApp {
      * @param {Error} error - 错误对象
      */
     handleError(error) {
-        const errorMessages = {
-            'NotAllowedError': '摄像头权限被拒绝',
-            'NotFoundError': '未找到摄像头设备',
-            'NotReadableError': '摄像头被其他应用占用'
-        };
-        
-        const message = errorMessages[error.name] || `摄像头错误: ${error.message}`;
-        this.showError(message);
+        console.error('摄像头错误:', error);
         this.updateMainButton('启动', false);
     }
     
@@ -138,39 +131,14 @@ class CameraApp {
     }
     
     /**
-     * 显示状态指示器
-     * @param {string} message - 状态信息
-     */
-    showStatus(message) {
-        this.statusIndicator.textContent = message;
-        this.statusIndicator.classList.add('show');
-        
-        // 3秒后自动隐藏
-        setTimeout(() => {
-            this.statusIndicator.classList.remove('show');
-        }, 3000);
-    }
-    
-    /**
-     * 显示错误信息
-     * @param {string} message - 错误信息
-     */
-    showError(message) {
-        this.errorMessage.textContent = message;
-        this.errorMessage.style.display = 'block';
-    }
-    
-    /**
-     * 隐藏错误信息
-     */
-    hideError() {
-        this.errorMessage.style.display = 'none';
-    }
-    
-    /**
      * 切换镜像模式
      */
     toggleMirror() {
+        // 只有在摄像头运行时才能切换镜像
+        if (!this.isRunning) {
+            return;
+        }
+        
         this.isMirrored = !this.isMirrored;
         
         if (this.isMirrored) {
@@ -204,13 +172,8 @@ class CameraApp {
             
             // 闪光效果
             this.showFlash();
-            
-            // 显示拍照成功状态
-            this.showStatus('照片已保存');
-            
         } catch (error) {
             console.error('拍照失败:', error);
-            this.showStatus('拍照失败');
         }
     }
     
