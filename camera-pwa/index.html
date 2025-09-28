@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>摄像头PWA应用</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196F3">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;color:#333}
+        .container{max-width:800px;margin:0 auto;padding:20px;min-height:100vh;display:flex;flex-direction:column}
+        header{text-align:center;margin-bottom:30px;color:white}
+        h1{font-size:2.5rem;margin-bottom:10px;text-shadow:2px 2px 4px rgba(0,0,0,0.3)}
+        main{flex:1;display:flex;flex-direction:column;align-items:center}
+        .camera-container{width:100%;max-width:600px;margin-bottom:30px;border-radius:15px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.3);background:#000;position:relative}
+        #video{width:100%;height:auto;display:block;transform:scaleX(-1);border-radius:10px}
+        .error-message{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,0,0,0.9);color:white;padding:20px;border-radius:10px;text-align:center;font-size:1.1rem;display:none}
+        .controls{display:flex;gap:15px;flex-wrap:wrap;justify-content:center}
+        .btn{padding:12px 24px;border:none;border-radius:25px;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.3s ease;min-width:120px}
+        .btn-primary{background:#4CAF50;color:white}
+        .btn-primary:hover:not(:disabled){background:#45a049;transform:translateY(-2px);box-shadow:0 5px 15px rgba(76,175,80,0.4)}
+        .btn-secondary{background:#f44336;color:white}
+        .btn-secondary:hover:not(:disabled){background:#da190b;transform:translateY(-2px);box-shadow:0 5px 15px rgba(244,67,54,0.4)}
+        .btn:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+        footer{text-align:center;margin-top:30px;color:white;opacity:0.8}
+        @media (max-width:768px){.container{padding:15px}.controls{flex-direction:column;align-items:center}.btn{width:100%;max-width:200px}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>摄像头PWA应用</h1>
+            <p>非镜像视角显示</p>
+        </header>
+        
+        <main>
+            <div class="camera-container">
+                <video id="video" autoplay muted playsinline></video>
+                <div id="error-message" class="error-message">无法访问摄像头，请检查权限设置</div>
+            </div>
+            
+            <div class="controls">
+                <button id="start-camera" class="btn btn-primary">启动摄像头</button>
+                <button id="stop-camera" class="btn btn-secondary" disabled>停止摄像头</button>
+            </div>
+        </main>
+        
+        <footer>
+            <p>PWA摄像头应用 - 非镜像视角</p>
+        </footer>
+    </div>
+    
+    <script>
+        class CameraApp {
+            constructor() {
+                this.video = document.getElementById('video');
+                this.startBtn = document.getElementById('start-camera');
+                this.stopBtn = document.getElementById('stop-camera');
+                this.errorMessage = document.getElementById('error-message');
+                this.stream = null;
+                this.init();
+            }
+            
+            init() {
+                this.startBtn.addEventListener('click', () => this.startCamera());
+                this.stopBtn.addEventListener('click', () => this.stopCamera());
+                
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    this.showError('您的浏览器不支持摄像头功能');
+                }
+            }
+            
+            async startCamera() {
+                try {
+                    this.hideError();
+                    this.startBtn.disabled = true;
+                    this.startBtn.textContent = '启动中...';
+                    
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+                        audio: false
+                    });
+                    
+                    this.video.srcObject = this.stream;
+                    this.video.onloadedmetadata = () => {
+                        this.video.play();
+                        this.startBtn.textContent = '摄像头已启动';
+                        this.stopBtn.disabled = false;
+                    };
+                } catch (error) {
+                    this.handleError(error);
+                }
+            }
+            
+            stopCamera() {
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                    this.stream = null;
+                }
+                this.video.srcObject = null;
+                this.startBtn.disabled = false;
+                this.startBtn.textContent = '启动摄像头';
+                this.stopBtn.disabled = true;
+            }
+            
+            handleError(error) {
+                let msg = '无法访问摄像头';
+                switch (error.name) {
+                    case 'NotAllowedError': msg = '摄像头权限被拒绝'; break;
+                    case 'NotFoundError': msg = '未找到摄像头设备'; break;
+                    case 'NotReadableError': msg = '摄像头被其他应用占用'; break;
+                    default: msg = `摄像头错误: ${error.message}`;
+                }
+                this.showError(msg);
+                this.startBtn.disabled = false;
+                this.startBtn.textContent = '启动摄像头';
+            }
+            
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorMessage.style.display = 'block';
+            }
+            
+            hideError() {
+                this.errorMessage.style.display = 'none';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => new CameraApp());
+        
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
+    </script>
+</body>
+</html>
